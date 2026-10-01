@@ -1,0 +1,20 @@
+.xxpo-app{max-width:1250px;margin:auto;color:var(--ut-body-text-color,#243247)}
+.xxpo-app h1{font-size:1.8rem;margin:0 0 .5rem}.xxpo-app h2{font-size:1.15rem;margin:0}
+.xxpo-top,.xxpo-section-title,.xxpo-actions{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.xxpo-top p{color:#607088}.xxpo-status{padding:.5rem 1rem;border-radius:2rem;background:#e6eef9;color:#28558f;font-weight:600}
+.xxpo-card{background:var(--ut-region-background-color,#fff);border:1px solid #dce3ed;border-radius:.75rem;padding:1.5rem;margin:1.5rem 0}
+.xxpo-section-title{margin-bottom:1.25rem}.xxpo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.2rem}
+.xxpo-field label{display:block;font-size:.85rem;font-weight:600;margin-bottom:.45rem}
+.xxpo-app input,.xxpo-app select,.xxpo-app button{font:inherit;color:inherit;border:1px solid #bbc7d7;border-radius:.4rem;background:var(--ut-region-background-color,#fff);padding:.7rem}
+.xxpo-app input,.xxpo-app select{width:100%;min-width:0}.xxpo-app button{cursor:pointer}.xxpo-app button:disabled{opacity:.6;cursor:default}
+.xxpo-value{display:flex;gap:.4rem}.xxpo-value button:first-child{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.xxpo-actions{justify-content:flex-start}.xxpo-actions #xxpo-total{margin-left:auto;font-weight:600}
+.xxpo-app .xxpo-primary{background:#215b9d;color:#fff;border-color:#215b9d}
+.xxpo-app #xxpo-message{padding:1rem;border-left:4px solid #215b9d;background:#eaf1fb;border-radius:.4rem}
+.xxpo-app #xxpo-message.xxpo-error{border-color:#b22d33;background:#fff0f0;color:#8a2026}
+.xxpo-app table{width:100%;border-collapse:collapse}.xxpo-app th,.xxpo-app td{padding:.7rem;text-align:left;border-bottom:1px solid #e2e7ee}
+.xxpo-app dialog{width:min(650px,95vw);border:1px solid #bbc7d7;border-radius:.7rem;padding:1.5rem;color:inherit}
+.xxpo-app dialog::backdrop{background:#15233866}.xxpo-app #xxpo-lov-results{max-height:45vh;overflow:auto;margin-top:1rem}
+.xxpo-app #xxpo-lov-results button{display:block;width:100%;text-align:left;margin:.4rem 0}
+.xxpo-app [hidden]{display:none!important}.xxpo-app input:focus-visible,.xxpo-app button:focus-visible,.xxpo-app select:focus-visible{outline:2px solid #215b9d;outline-offset:2px}
+@media(max-width:900px){.xxpo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:550px){.xxpo-grid{grid-template-columns:1fr}.xxpo-card{padding:1rem}.xxpo-app table{font-size:.8rem}}

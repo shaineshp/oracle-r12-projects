@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f5f1">
+  <title>Daymark | Daily activity tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d302b;
+      --muted: #73817a;
+      --line: #e1e7e0;
+      --paper: #f3f5f1;
+      --white: #fff;
+      --forest: #1f4439;
+      --forest-light: #2c5b4c;
+      --coral: #df725d;
+      --blue: #6689b0;
+      --gold: #d2a548;
+      --shadow: 0 14px 38px rgb(35 57 48 / 7%);
+      font-family: "DM Sans", "Avenir Next", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 94% 5%, rgb(210 165 72 / 9%), transparent 23rem),
+        linear-gradient(135deg, #f5f7f3, #edf1eb 70%);
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      min-height: 100vh;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      padding: 32px 22px 24px;
+      color: #eff4ee;
+      background:
+        radial-gradient(ellipse at 4% 94%, rgb(223 114 93 / 17%), transparent 15rem),
+        var(--forest);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin: 0 0 52px 4px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      aspect-ratio: 1;
+      place-items: center;
+      border: 1px solid rgb(255 255 255 / 34%);
+      border-radius: 50%;
+      color: #f5c87d;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 21px;
+      line-height: 1;
+    }
+
+    .side-label, .eyebrow {
+      margin: 0;
+      font-family: "DM Mono", monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .side-label { padding: 0 10px; color: #a5b9ad; }
+
+    .today-link {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      width: 100%;
+      min-height: 44px;
+      margin: 12px 0 30px;
+      padding: 0 12px;
+      border: 1px solid rgb(255 255 255 / 14%);
+      border-radius: 5px;
+      background: rgb(255 255 255 / 9%);
+      color: white;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .today-dot {
+      width: 8px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: #f1bc69;
+      box-shadow: 0 0 0 4px rgb(241 188 105 / 15%);
+    }
+
+    .date-picker-wrap { margin-top: 12px; }
+
+    .date-picker {
+      width: 100%;
+      min-height: 42px;
+      padding: 0 10px;
+      border: 1px solid rgb(255 255 255 / 18%);
+      border-radius: 5px;
+      color: #f4f5f1;
+      background: rgb(255 255 255 / 7%);
+      color-scheme: dark;
+    }
+
+    .side-bottom {
+      margin-top: auto;
+      padding: 16px 10px 0;
+      border-top: 1px solid rgb(255 255 255 / 15%);
+      color: #c1cfc5;
+      font-size: 12px;
+    }
+
+    .save-state { display: flex; align-items: center; gap: 8px; }
+    .save-indicator { width: 7px; aspect-ratio: 1; border-radius: 50%; background: #82c79d; }
+
+    main {
+      width: min(100%, 1090px);
+      margin: 0 auto;
+      padding: 38px clamp(22px, 5vw, 76px) 56px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 47px;
+    }
+
+    .date-navigation { display: flex; align-items: center; gap: 8px; }
+
+    .icon-button {
+      display: inline-grid;
+      width: 36px;
+      aspect-ratio: 1;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: rgb(255 255 255 / 58%);
+      font-size: 17px;
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease;
+    }
+
+    .icon-button:hover { transform: translateY(-1px); background: white; }
+
+    .topbar-date {
+      margin: 0 0 0 7px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .day-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow { margin-bottom: 10px; color: var(--forest-light); }
+
+    h1 {
+      margin: 0;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(34px, 5vw, 46px);
+      font-weight: 500;
+      line-height: 1.08;
+    }
+
+    .day-subtitle { margin: 9px 0 0; color: var(--muted); font-size: 14px; }
+
+    .completion-summary {
+      min-width: 148px;
+      padding: 12px 0 2px 20px;
+      border-left: 1px solid #d8dfd7;
+    }
+
+    .completion-count {
+      display: block;
+      margin-bottom: 9px;
+      font-family: "DM Mono", monospace;
+      font-size: 13px;
+    }
+
+    .progress-track { height: 4px; overflow: hidden; border-radius: 5px; background: #dfe6de; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--coral); transition: width .24s ease; }
+
+    .activity-panel {
+      overflow: hidden;
+      border: 1px solid #e5e9e3;
+      border-radius: 7px;
+      background: rgb(255 255 255 / 84%);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 21px 24px 17px;
+      border-bottom: 1px solid #edf0ec;
+    }
+
+    h2 { margin: 0; font-size: 15px; font-weight: 700; }
+
+    .filter-tabs { display: flex; align-items: center; gap: 4px; }
+
+    .filter-button {
+      min-height: 30px;
+      padding: 0 10px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .filter-button[aria-pressed="true"] { background: #eaf0e9; color: var(--forest); font-weight: 700; }
+
+    .add-form {
+      display: grid;
+      grid-template-columns: minmax(140px, 1fr) 125px 125px auto;
+      gap: 9px;
+      padding: 17px 24px;
+      border-bottom: 1px solid #edf0ec;
+      background: #fafbf9;
+    }
+
+    .field {
+      min-width: 0;
+      height: 40px;
+      padding: 0 11px;
+      border: 1px solid #dfe5de;
+      border-radius: 4px;
+      outline: none;
+      background: white;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .field:focus, .activity-title:focus, .activity-time:focus, .activity-priority:focus, textarea:focus {
+      border-color: #6b9381;
+      box-shadow: 0 0 0 3px rgb(73 126 101 / 12%);
+    }
+
+    .field::placeholder { color: #9aa69e; }
+
+    .add-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 4px;
+      background: var(--forest);
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background .18s ease;
+    }
+
+    .add-button:hover { background: var(--forest-light); }
+    .plus { font-size: 17px; font-weight: 400; line-height: 1; }
+
+    .activity-list { padding: 5px 24px 12px; }
+
+    .activity-row {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr) 32px;
+      align-items: start;
+      gap: 13px;
+      padding: 17px 0;
+      border-bottom: 1px solid #edf0ec;
+      animation: arrive .22s ease both;
+    }
+
+    @keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .activity-check {
+      width: 18px;
+      height: 18px;
+      margin: 2px 0 0;
+      accent-color: var(--forest-light);
+      cursor: pointer;
+    }
+
+    .activity-main { min-width: 0; }
+
+    .activity-title {
+      display: block;
+      width: 100%;
+      height: 27px;
+      padding: 1px 5px;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      outline: none;
+      background: transparent;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .activity-row.is-done .activity-title { color: #87938b; text-decoration: line-through; }
+
+    .activity-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin: 6px 0 0 5px; }
+
+    .activity-time, .activity-priority {
+      min-height: 25px;
+      padding: 2px 7px;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      outline: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .activity-time { width: 90px; font-family: "DM Mono", monospace; }
+    .activity-priority { cursor: pointer; }
+    .activity-priority[data-priority="High"] { color: #bf5948; background: #fff0ed; }
+    .activity-priority[data-priority="Medium"] { color: #987322; background: #fbf4e3; }
+    .activity-priority[data-priority="Low"] { color: #50749c; background: #edf3f9; }
+
+    .delete-button {
+      display: grid;
+      width: 30px;
+      aspect-ratio: 1;
+      place-items: center;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #97a29a;
+      font-size: 17px;
+      cursor: pointer;
+      opacity: .65;
+    }
+
+    .delete-button:hover { background: #fff0ed; color: #bf5948; opacity: 1; }
+
+    .empty-state {
+      padding: 32px 12px 34px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .empty-mark {
+      display: grid;
+      width: 42px;
+      aspect-ratio: 1;
+      place-items: center;
+      margin: 0 auto 12px;
+      border: 1px solid #e1e7e0;
+      border-radius: 50%;
+      color: var(--forest-light);
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 22px;
+    }
+
+    .review-section { margin-top: 31px; }
+
+    .review-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .review-heading span { color: var(--muted); font-size: 12px; }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 94px;
+      resize: vertical;
+      padding: 14px 16px;
+      border: 1px solid #e0e6df;
+      border-radius: 5px;
+      outline: none;
+      background: rgb(255 255 255 / 72%);
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    textarea::placeholder { color: #9aa69e; }
+
+    @media (max-width: 780px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; padding: 14px 20px; }
+      .brand { margin: 0; }
+      .sidebar-nav { display: flex; align-items: center; gap: 10px; }
+      .side-label { display: none; }
+      .today-link { width: auto; min-height: 38px; margin: 0; padding: 0 10px; font-size: 12px; }
+      .date-picker-wrap { margin: 0; }
+      .date-picker { width: 145px; min-height: 38px; font-size: 12px; }
+      .side-bottom { display: none; }
+      main { padding-top: 25px; }
+      .topbar { margin-bottom: 35px; }
+    }
+
+    @media (max-width: 560px) {
+      .sidebar { grid-template-columns: 1fr; gap: 12px; padding: 13px 18px; }
+      .sidebar-nav { justify-content: space-between; }
+      .date-picker { width: 155px; }
+      main { padding: 20px 16px 36px; }
+      .topbar { margin-bottom: 31px; }
+      .topbar-date { display: none; }
+      .day-heading { align-items: start; gap: 12px; }
+      h1 { font-size: 36px; }
+      .completion-summary { min-width: 104px; padding-left: 13px; }
+      .completion-count { font-size: 11px; white-space: nowrap; }
+      .panel-heading { align-items: flex-start; padding: 17px 15px 13px; }
+      .filter-tabs { gap: 0; }
+      .filter-button { padding: 0 7px; font-size: 11px; }
+      .add-form { grid-template-columns: minmax(0, 1fr) 106px; padding: 14px 15px; }
+      .add-form .activity-name-field { grid-column: 1 / -1; }
+      .add-button { padding: 0 10px; font-size: 12px; }
+      .activity-list { padding: 3px 15px 10px; }
+      .activity-row { gap: 9px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Tracker navigation">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">d</span><span>daymark</span></div>
+      <div class="sidebar-nav">
+        <div>
+          <p class="side-label">Your workspace</p>
+          <button class="today-link" id="todayButton" type="button"><span class="today-dot" aria-hidden="true"></span>Today</button>
+        </div>
+        <div class="date-picker-wrap">
+          <label class="side-label" for="datePicker">Jump to date</label>
+          <input class="date-picker" id="datePicker" type="date" aria-label="Choose a day">
+        </div>
+      </div>
+      <div class="side-bottom"><div class="save-state"><span class="save-indicator" aria-hidden="true"></span><span id="saveStatus">Saved on this device</span></div></div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div class="date-navigation" aria-label="Change day">
+          <button class="icon-button" id="previousDay" type="button" aria-label="Previous day" title="Previous day">&#8592;</button>
+          <button class="icon-button" id="nextDay" type="button" aria-label="Next day" title="Next day">&#8594;</button>
+          <p class="topbar-date" id="topbarDate"></p>
+        </div>
+        <p class="eyebrow" id="todayMarker">DAILY TRACKER</p>
+      </header>
+
+      <section aria-labelledby="pageTitle">
+        <div class="day-heading">
+          <div>
+            <p class="eyebrow" id="dayEyebrow">YOUR PLAN</p>
+            <h1 id="pageTitle">Today</h1>
+            <p class="day-subtitle" id="daySubtitle"></p>
+          </div>
+          <div class="completion-summary" aria-live="polite">
+            <span class="completion-count" id="completionCount">0 of 0 complete</span>
+            <div class="progress-track" role="progressbar" id="progressBar" aria-label="Daily completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="progressFill"></div></div>
+          </div>
+        </div>
+
+        <section class="activity-panel" aria-labelledby="activitiesHeading">
+          <div class="panel-heading">
+            <h2 id="activitiesHeading">Activities</h2>
+            <div class="filter-tabs" role="group" aria-label="Filter activities">
+              <button class="filter-button" type="button" data-filter="all" aria-pressed="true">All</button>
+              <button class="filter-button" type="button" data-filter="open" aria-pressed="false">Open</button>
+              <button class="filter-button" type="button" data-filter="done" aria-pressed="false">Done</button>
+            </div>
+          </div>
+
+          <form class="add-form" id="addForm">
+            <input class="field activity-name-field" id="activityName" type="text" maxlength="120" placeholder="What needs to get done?" aria-label="Activity name" required>
+            <input class="field" id="activityTime" type="time" aria-label="Activity time">
+            <select class="field" id="activityPriority" aria-label="Activity priority">
+              <option value="High">High priority</option>
+              <option value="Medium" selected>Medium priority</option>
+              <option value="Low">Low priority</option>
+            </select>
+            <button class="add-button" type="submit"><span class="plus" aria-hidden="true">+</span> Add activity</button>
+          </form>
+
+          <div class="activity-list" id="activityList" aria-live="polite"></div>
+        </section>
+
+        <section class="review-section" aria-labelledby="reviewHeading">
+          <div class="review-heading">
+            <h2 id="reviewHeading">End-of-day notes</h2>
+            <span>Saved automatically</span>
+          </div>
+          <textarea id="reflection" maxlength="2000" placeholder="Wins, blockers, or anything to carry into tomorrow…" aria-label="End-of-day notes"></textarea>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const storageKey = "daymark.daily-tracker.v1";
+      const datePicker = document.querySelector("#datePicker");
+      const activityList = document.querySelector("#activityList");
+      const activityName = document.querySelector("#activityName");
+      const activityTime = document.querySelector("#activityTime");
+      const activityPriority = document.querySelector("#activityPriority");
+      const reflection = document.querySelector("#reflection");
+      const saveStatus = document.querySelector("#saveStatus");
+      const today = toDateKey(new Date());
+      let selectedDate = today;
+      let activeFilter = "all";
+      let days = loadDays();
+
+      function toDateKey(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function fromDateKey(key) {
+        const [year, month, day] = key.split("-").map(Number);
+        return new Date(year, month - 1, day);
+      }
+
+      function loadDays() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+          return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+        } catch {
+          return {};
+        }
+      }
+
+      function getDay() {
+        if (!days[selectedDate] || typeof days[selectedDate] !== "object") {
+          days[selectedDate] = { activities: [], reflection: "" };
+        }
+        if (!Array.isArray(days[selectedDate].activities)) days[selectedDate].activities = [];
+        if (typeof days[selectedDate].reflection !== "string") days[selectedDate].reflection = "";
+        return days[selectedDate];
+      }
+
+      function saveDays() {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(days));
+          saveStatus.textContent = "Saved on this device";
+        } catch {
+          saveStatus.textContent = "Could not save changes";
+        }
+      }
+
+      function formatDate(key, options) {
+        return new Intl.DateTimeFormat(undefined, options).format(fromDateKey(key));
+      }
+
+      function makeInput(className, type, value, label) {
+        const input = document.createElement("input");
+        input.className = className;
+        input.type = type;
+        input.value = value || "";
+        input.setAttribute("aria-label", label);
+        return input;
+      }
+
+      function renderActivity(activity) {
+        const row = document.createElement("article");
+        row.className = `activity-row${activity.done ? " is-done" : ""}`;
+
+        const checkbox = document.createElement("input");
+        checkbox.className = "activity-check";
+        checkbox.type = "checkbox";
+        checkbox.checked = Boolean(activity.done);
+        checkbox.setAttribute("aria-label", `Mark ${activity.title || "activity"} ${activity.done ? "not done" : "done"}`);
+        checkbox.addEventListener("change", () => {
+          activity.done = checkbox.checked;
+          saveDays();
+          render();
+        });
+
+        const main = document.createElement("div");
+        main.className = "activity-main";
+        const title = makeInput("activity-title", "text", activity.title, "Activity name");
+        title.maxLength = 120;
+        title.addEventListener("change", () => {
+          activity.title = title.value.trim();
+          if (!activity.title) {
+            getDay().activities = getDay().activities.filter((item) => item.id !== activity.id);
+          }
+          saveDays();
+          render();
+        });
+
+        const meta = document.createElement("div");
+        meta.className = "activity-meta";
+        const time = makeInput("activity-time", "time", activity.time, `Time for ${activity.title}`);
+        time.addEventListener("change", () => { activity.time = time.value; saveDays(); });
+
+        const priority = document.createElement("select");
+        priority.className = "activity-priority";
+        priority.setAttribute("aria-label", `Priority for ${activity.title}`);
+        ["High", "Medium", "Low"].forEach((level) => {
+          const option = document.createElement("option");
+          option.value = level;
+          option.textContent = `${level} priority`;
+          option.selected = (activity.priority || "Medium") === level;
+          priority.append(option);
+        });
+        priority.dataset.priority = activity.priority || "Medium";
+        priority.addEventListener("change", () => {
+          activity.priority = priority.value;
+          priority.dataset.priority = priority.value;
+          saveDays();
+        });
+        meta.append(time, priority);
+        main.append(title, meta);
+
+        const remove = document.createElement("button");
+        remove.className = "delete-button";
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", `Delete ${activity.title || "activity"}`);
+        remove.title = "Delete activity";
+        remove.addEventListener("click", () => {
+          getDay().activities = getDay().activities.filter((item) => item.id !== activity.id);
+          saveDays();
+          render();
+        });
+
+        row.append(checkbox, main, remove);
+        return row;
+      }
+
+      function render() {
+        const date = fromDateKey(selectedDate);
+        const isToday = selectedDate === today;
+        document.querySelector("#pageTitle").textContent = isToday ? "Today" : formatDate(selectedDate, { weekday: "long" });
+        document.querySelector("#dayEyebrow").textContent = isToday ? "YOUR PLAN" : "DAILY PLAN";
+        document.querySelector("#daySubtitle").textContent = formatDate(selectedDate, { month: "long", day: "numeric", year: "numeric" });
+        document.querySelector("#topbarDate").textContent = formatDate(selectedDate, { month: "short", day: "numeric", year: "numeric" });
+        document.querySelector("#todayMarker").textContent = isToday ? "DAILY TRACKER" : "DAY VIEW";
+        datePicker.value = selectedDate;
+        reflection.value = getDay().reflection;
+
+        const all = getDay().activities;
+        const completed = all.filter((activity) => activity.done).length;
+        const percentage = all.length ? Math.round((completed / all.length) * 100) : 0;
+        document.querySelector("#completionCount").textContent = `${completed} of ${all.length} complete`;
+        document.querySelector("#progressFill").style.width = `${percentage}%`;
+        document.querySelector("#progressBar").setAttribute("aria-valuenow", String(percentage));
+
+        document.querySelectorAll("[data-filter]").forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.filter === activeFilter));
+        });
+
+        const visible = all.filter((activity) => activeFilter === "all" || (activeFilter === "done" ? activity.done : !activity.done));
+        activityList.replaceChildren();
+        if (visible.length) {
+          visible.forEach((activity) => activityList.append(renderActivity(activity)));
+        } else {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          const mark = document.createElement("span");
+          mark.className = "empty-mark";
+          mark.setAttribute("aria-hidden", "true");
+          mark.textContent = activeFilter === "done" ? "✓" : "d";
+          const message = document.createElement("div");
+          message.textContent = activeFilter === "done" ? "Nothing completed yet." : activeFilter === "open" && all.length ? "All activities are complete." : "A clear page. Add your first activity above.";
+          empty.append(mark, message);
+          activityList.append(empty);
+        }
+      }
+
+      document.querySelector("#addForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const title = activityName.value.trim();
+        if (!title) {
+          activityName.focus();
+          return;
+        }
+        getDay().activities.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          title,
+          time: activityTime.value,
+          priority: activityPriority.value,
+          done: false
+        });
+        saveDays();
+        activityName.value = "";
+        activityTime.value = "";
+        activityPriority.value = "Medium";
+        activeFilter = "all";
+        render();
+        activityName.focus();
+      });
+
+      document.querySelectorAll("[data-filter]").forEach((button) => {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter;
+          render();
+        });
+      });
+
+      document.querySelector("#previousDay").addEventListener("click", () => {
+        const date = fromDateKey(selectedDate);
+        date.setDate(date.getDate() - 1);
+        selectedDate = toDateKey(date);
+        render();
+      });
+
+      document.querySelector("#nextDay").addEventListener("click", () => {
+        const date = fromDateKey(selectedDate);
+        date.setDate(date.getDate() + 1);
+        selectedDate = toDateKey(date);
+        render();
+      });
+
+      document.querySelector("#todayButton").addEventListener("click", () => {
+        selectedDate = today;
+        render();
+      });
+
+      datePicker.addEventListener("change", () => {
+        if (datePicker.value) {
+          selectedDate = datePicker.value;
+          render();
+        }
+      });
+
+      reflection.addEventListener("input", () => {
+        getDay().reflection = reflection.value;
+        saveDays();
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

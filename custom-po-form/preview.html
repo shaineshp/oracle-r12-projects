@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Custom Purchase Order</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f8;color:#1a2940;font:15px system-ui,sans-serif}main{max-width:1120px;margin:36px auto;padding:0 24px}h1{margin:8px 0;font-size:30px}h2{font-size:18px;margin:0 0 20px}.meta{color:#607088}.tag{display:inline-block;color:#265493;background:#e4edf9;border-radius:30px;padding:6px 12px;font-size:12px}.card{background:white;border:1px solid #dce3ed;border-radius:12px;padding:24px;margin:22px 0}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}label{display:block;font-size:13px;font-weight:600}input,select{display:block;margin-top:8px;width:100%;padding:11px;border:1px solid #bec9d8;border-radius:6px;background:white;color:inherit;font:inherit}input:focus,select:focus{outline:2px solid #2e69b5;outline-offset:1px}.actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}button{border:1px solid #bdc9d8;padding:11px 18px;border-radius:7px;background:white;cursor:pointer;color:inherit;font:inherit}.primary{background:#215b9d;color:white;border-color:#215b9d}.line-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}#summary{font-weight:600;margin-left:auto}[hidden]{display:none!important}@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.grid{grid-template-columns:1fr}main{padding:0 14px}.card{padding:18px}}
+</style></head><body><main>
+<span class="tag">Layout preview · Oracle connection required</span>
+<h1>Create purchase order</h1><p class="meta">Standard PO · 20 core fields · Created as Incomplete for review and approval</p>
+<form id="poForm"><section class="card"><h2>Order details</h2><div id="header" class="grid"></div></section>
+<div id="lines"></div><div class="actions"><button type="button" id="addLine">+ Add line</button><button class="primary" type="submit">Review entry</button><button type="button" id="export" hidden>Download entry</button><span id="summary" aria-live="polite"></span></div></form>
+<section class="card" id="review" hidden><h2>Entry review</h2><p>This preview validates your entry and exports it for review. Posting is handled by the Oracle form after deployment.</p><pre id="payload"></pre></section>
+</main><script>
+const headerFields=[["org_id", "Operating unit"], ["vendor_id", "Supplier"], ["vendor_site_id", "Supplier site"], ["agent_id", "Buyer"], ["currency_code", "Currency"], ["bill_to_location_id", "Bill-to location"], ["ship_to_location_id", "Ship-to location"], ["terms_id", "Payment terms"]];
+const lineFields=[["line_num", "Line number"], ["line_type_id", "Line type"], ["item_id", "Item"], ["item_description", "Description"], ["category_id", "Purchasing category"], ["unit_of_measure", "UOM"], ["quantity", "Quantity"], ["unit_price", "Unit price"], ["need_by_date", "Need-by date"], ["ship_to_organization_id", "Receiving organization"], ["destination_type_code", "Destination type"], ["charge_account_id", "Charge account"]];
+let nextLine=1;
+let reviewed=null;
+function makeField(name,label,lineNumber){
+ const box=document.createElement('label');box.textContent=label;
+ let input;
+ if(name==='destination_type_code'){
+  input=document.createElement('select');for(const value of ['EXPENSE','INVENTORY']){const o=document.createElement('option');o.value=value;o.textContent=value==='EXPENSE'?'Expense':'Inventory';input.append(o);}
+ }else{input=document.createElement('input');input.type=name==='need_by_date'?'date':'text';}
+ input.name=name;input.required=name!=='item_id';
+ if(name==='line_num'){input.value=lineNumber;input.readOnly=true;}
+ if(name==='quantity'||name==='unit_price'){input.type='number';input.min=name==='quantity'?'0.000001':'0';input.step='any';}
+ if(name==='currency_code'){input.maxLength=15;input.placeholder='e.g. INR';}
+ if(name==='need_by_date'){const d=new Date();input.min=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+ if(name==='item_description'){input.maxLength=240;}
+ if(name==='unit_of_measure'){input.maxLength=25;input.placeholder='e.g. Each';}
+ box.append(input);return box;
+}
+for(const [name,label] of headerFields)document.getElementById('header').append(makeField(name,label));
+function addLine(){
+ const number=nextLine++;const section=document.createElement('section');section.className='card line';
+ const top=document.createElement('div');top.className='line-title';const title=document.createElement('h2');title.textContent='Line '+number;top.append(title);
+ const remove=document.createElement('button');remove.type='button';remove.textContent='Remove line';remove.addEventListener('click',()=>{if(document.querySelectorAll('.line').length>1){section.remove();invalidate();updateTotal();}});top.append(remove);section.append(top);
+ const grid=document.createElement('div');grid.className='grid';for(const [name,label] of lineFields)grid.append(makeField(name,label,number));section.append(grid);document.getElementById('lines').append(section);invalidate();updateTotal();
+}
+function values(container){return Object.fromEntries([...container.querySelectorAll('input,select')].map(el=>[el.name,el.value.trim()]));}
+function invalidate(){reviewed=null;document.getElementById('review').hidden=true;document.getElementById('export').hidden=true;}
+function updateTotal(){let total=0;for(const section of document.querySelectorAll('.line')){const v=values(section);total+=(Number(v.quantity)||0)*(Number(v.unit_price)||0);}const c=document.querySelector('[name=currency_code]').value.toUpperCase();document.getElementById('summary').textContent='Line total: '+total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+(c?' '+c:'');}
+document.getElementById('addLine').addEventListener('click',addLine);
+document.getElementById('poForm').addEventListener('input',()=>{invalidate();updateTotal();});
+document.getElementById('poForm').addEventListener('change',()=>{invalidate();updateTotal();});
+document.getElementById('poForm').addEventListener('submit',e=>{e.preventDefault();reviewed={document_type:'STANDARD',approval_status:'INCOMPLETE',header:values(document.getElementById('header')),lines:[...document.querySelectorAll('.line')].map(values)};document.getElementById('payload').textContent=JSON.stringify(reviewed,null,2);document.getElementById('review').hidden=false;document.getElementById('export').hidden=false;});
+document.getElementById('export').addEventListener('click',()=>{if(!reviewed)return;const url=URL.createObjectURL(new Blob([JSON.stringify(reviewed,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='custom-po-entry.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+addLine();
+</script></body></html>

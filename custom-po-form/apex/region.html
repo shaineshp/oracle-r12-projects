@@ -1,0 +1,10 @@
+<div id="xxpo-app" class="xxpo-app">
+  <div class="xxpo-top"><div><h1>Create purchase order</h1><p>Standard purchase order · Created as Incomplete for approval</p></div><span id="xxpo-status" class="xxpo-status">New draft</span></div>
+  <div id="xxpo-message" role="status" aria-live="polite" hidden></div>
+  <section class="xxpo-card"><div class="xxpo-section-title"><h2>Order details</h2><button type="button" id="xxpo-new">New draft</button></div><div id="xxpo-header" class="xxpo-grid"></div></section>
+  <div id="xxpo-lines"></div>
+  <div class="xxpo-actions"><button type="button" id="xxpo-add">Add line</button><button type="button" id="xxpo-save">Save draft</button><button type="button" id="xxpo-post" class="xxpo-primary">Post to PO</button><button type="button" id="xxpo-refresh">Refresh status</button><span id="xxpo-total"></span></div>
+  <section class="xxpo-card"><h2>Import result</h2><div id="xxpo-result">Save and post a draft to create a purchase order.</div><ul id="xxpo-errors"></ul></section>
+  <section class="xxpo-card"><div class="xxpo-section-title"><h2>My recent drafts</h2><button type="button" id="xxpo-list-refresh">Refresh list</button></div><div id="xxpo-list"></div></section>
+  <dialog id="xxpo-lov" aria-labelledby="xxpo-lov-title"><div class="xxpo-section-title"><h2 id="xxpo-lov-title">Select value</h2><button type="button" id="xxpo-lov-close">Close</button></div><label>Search<input id="xxpo-lov-search" type="search" autocomplete="off"></label><div id="xxpo-lov-results" role="status" aria-live="polite"></div></dialog>
+</div>
