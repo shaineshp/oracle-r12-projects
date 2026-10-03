@@ -131,8 +131,14 @@
     function values(model, definitions) {
       return Object.fromEntries(definitions.map(([name, label]) => {
         const value = model[name];
-        if ((value === null || value === undefined || value === "") && name !== "item_id") throw new Error("Enter " + label.toLowerCase() + ".");
-        return [name, value == null || value === "" ? null : stringFields.has(name) ? String(value).trim() : Number(value)];
+        const empty = value === null || value === undefined || String(value).trim() === "";
+        if (empty && name !== "item_id") throw new Error("Enter " + label.toLowerCase() + ".");
+        if (empty) return [name, null];
+        if (stringFields.has(name)) return [name, String(value).trim()];
+        const number = Number(value);
+        if (!Number.isFinite(number) || (name === "unit_price" ? number < 0 : number <= 0)) throw new Error("Enter a valid " + label.toLowerCase() + ".");
+        if (!["quantity", "unit_price"].includes(name) && !Number.isSafeInteger(number)) throw new Error("Select a valid " + label.toLowerCase() + ".");
+        return [name, number];
       }));
     }
     return { draft_id: state.id, revision: state.revision, header: values(state.header, headerFields), lines: state.lines.map(line => values(line, lineFields)) };

@@ -126,6 +126,10 @@ CREATE OR REPLACE PACKAGE BODY xxpo_apex_api AS
     l_request NUMBER;
     l_count NUMBER;
     l_org NUMBER;
+    l_receiving_org NUMBER;
+    l_valid NUMBER;
+    entry xxpo_entry_headers%ROWTYPE;
+    detail xxpo_entry_lines%ROWTYPE;
   BEGIN
     apex_json.parse(j, p_payload);
     l_id := apex_json.get_number('draft_id', p_values => j);
@@ -134,6 +138,13 @@ CREATE OR REPLACE PACKAGE BODY xxpo_apex_api AS
     END IF;
     l_org := apex_json.get_number('header.org_id', p_values => j);
     require_org(l_org);
+    entry.vendor_id := apex_json.get_number('header.vendor_id', p_values => j);
+    entry.vendor_site_id := apex_json.get_number('header.vendor_site_id', p_values => j);
+    entry.agent_id := apex_json.get_number('header.agent_id', p_values => j);
+    entry.currency_code := apex_json.get_varchar2('header.currency_code', p_values => j);
+    entry.bill_to_location_id := apex_json.get_number('header.bill_to_location_id', p_values => j);
+    entry.ship_to_location_id := apex_json.get_number('header.ship_to_location_id', p_values => j);
+    entry.terms_id := apex_json.get_number('header.terms_id', p_values => j);
     l_count := apex_json.get_count('lines', p_values => j);
     IF NVL(l_count, 0) < 1 OR l_count > 200 THEN
       raise_application_error(-20036, 'Enter between 1 and 200 PO lines.');
@@ -157,31 +168,49 @@ CREATE OR REPLACE PACKAGE BODY xxpo_apex_api AS
         last_updated_by, last_update_login
       ) VALUES (
         l_id, l_org,
-        apex_json.get_number('header.vendor_id', p_values => j),
-        apex_json.get_number('header.vendor_site_id', p_values => j),
-        apex_json.get_number('header.agent_id', p_values => j),
-        apex_json.get_varchar2('header.currency_code', p_values => j),
-        apex_json.get_number('header.bill_to_location_id', p_values => j),
-        apex_json.get_number('header.ship_to_location_id', p_values => j),
-        apex_json.get_number('header.terms_id', p_values => j),
+        entry.vendor_id,
+        entry.vendor_site_id,
+        entry.agent_id,
+        entry.currency_code,
+        entry.bill_to_location_id,
+        entry.ship_to_location_id,
+        entry.terms_id,
         fnd_global.user_id, fnd_global.user_id, fnd_global.login_id
       );
     END IF;
     UPDATE xxpo_entry_headers SET
       org_id = l_org,
-      vendor_id = apex_json.get_number('header.vendor_id', p_values => j),
-      vendor_site_id = apex_json.get_number('header.vendor_site_id', p_values => j),
-      agent_id = apex_json.get_number('header.agent_id', p_values => j),
-      currency_code = apex_json.get_varchar2('header.currency_code', p_values => j),
-      bill_to_location_id = apex_json.get_number('header.bill_to_location_id', p_values => j),
-      ship_to_location_id = apex_json.get_number('header.ship_to_location_id', p_values => j),
-      terms_id = apex_json.get_number('header.terms_id', p_values => j),
+      vendor_id = entry.vendor_id,
+      vendor_site_id = entry.vendor_site_id,
+      agent_id = entry.agent_id,
+      currency_code = entry.currency_code,
+      bill_to_location_id = entry.bill_to_location_id,
+      ship_to_location_id = entry.ship_to_location_id,
+      terms_id = entry.terms_id,
       apex_revision = apex_revision + 1,
       last_update_date = SYSDATE, last_updated_by = fnd_global.user_id,
       last_update_login = fnd_global.login_id
     WHERE draft_id = l_id;
     DELETE FROM xxpo_entry_lines WHERE draft_id = l_id;
     FOR i IN 1 .. l_count LOOP
+      detail.line_num := apex_json.get_number('lines[%d].line_num', i, p_values => j);
+      detail.line_type_id := apex_json.get_number('lines[%d].line_type_id', i, p_values => j);
+      detail.item_id := apex_json.get_number('lines[%d].item_id', i, p_values => j);
+      detail.item_description := apex_json.get_varchar2('lines[%d].item_description', i, p_values => j);
+      detail.category_id := apex_json.get_number('lines[%d].category_id', i, p_values => j);
+      detail.unit_of_measure := apex_json.get_varchar2('lines[%d].unit_of_measure', i, p_values => j);
+      detail.quantity := apex_json.get_number('lines[%d].quantity', i, p_values => j);
+      detail.unit_price := apex_json.get_number('lines[%d].unit_price', i, p_values => j);
+      detail.destination_type_code := apex_json.get_varchar2('lines[%d].destination_type_code', i, p_values => j);
+      detail.charge_account_id := apex_json.get_number('lines[%d].charge_account_id', i, p_values => j);
+      detail.need_by_date := TO_DATE(apex_json.get_varchar2('lines[%d].need_by_date', i, p_values => j), 'FXYYYY-MM-DD');
+      l_receiving_org := apex_json.get_number('lines[%d].ship_to_organization_id', i, p_values => j);
+      SELECT COUNT(*) INTO l_valid FROM org_organization_definitions
+       WHERE organization_id = l_receiving_org AND operating_unit = l_org
+         AND (disable_date IS NULL OR disable_date > SYSDATE);
+      IF l_valid <> 1 THEN
+        raise_application_error(-20044, 'Select an active receiving organization for the operating unit.');
+      END IF;
       INSERT INTO xxpo_entry_lines (
         draft_line_id, draft_id, line_num, line_type_id, item_id, item_description,
         category_id, unit_of_measure, quantity, unit_price, need_by_date,
@@ -189,18 +218,18 @@ CREATE OR REPLACE PACKAGE BODY xxpo_apex_api AS
         created_by, last_updated_by, last_update_login
       ) VALUES (
         xxpo_entry_lines_s.NEXTVAL, l_id,
-        apex_json.get_number('lines[%d].line_num', i, p_values => j),
-        apex_json.get_number('lines[%d].line_type_id', i, p_values => j),
-        apex_json.get_number('lines[%d].item_id', i, p_values => j),
-        apex_json.get_varchar2('lines[%d].item_description', i, p_values => j),
-        apex_json.get_number('lines[%d].category_id', i, p_values => j),
-        apex_json.get_varchar2('lines[%d].unit_of_measure', i, p_values => j),
-        apex_json.get_number('lines[%d].quantity', i, p_values => j),
-        apex_json.get_number('lines[%d].unit_price', i, p_values => j),
-        TO_DATE(apex_json.get_varchar2('lines[%d].need_by_date', i, p_values => j), 'FXYYYY-MM-DD'),
-        apex_json.get_number('lines[%d].ship_to_organization_id', i, p_values => j),
-        apex_json.get_varchar2('lines[%d].destination_type_code', i, p_values => j),
-        apex_json.get_number('lines[%d].charge_account_id', i, p_values => j),
+        detail.line_num,
+        detail.line_type_id,
+        detail.item_id,
+        detail.item_description,
+        detail.category_id,
+        detail.unit_of_measure,
+        detail.quantity,
+        detail.unit_price,
+        detail.need_by_date,
+        l_receiving_org,
+        detail.destination_type_code,
+        detail.charge_account_id,
         fnd_global.user_id, fnd_global.user_id, fnd_global.login_id
       );
     END LOOP;

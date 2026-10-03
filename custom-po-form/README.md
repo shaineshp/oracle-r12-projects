@@ -1,5 +1,9 @@
 # Custom Standard PO entry from Tools
 
+For the requested **Oracle APEX implementation**, use [apex/README.md](apex/README.md).
+It includes the entry UI, server API, identity mapping, and APEX page setup.
+The Forms implementation below remains available as the earlier alternative.
+
 This implementation captures 20 business fields, supports multiple lines, and
 queues a new Standard Purchase Order through the R12 Purchasing Documents Open
 Interface (PDOI). It creates the PO as INCOMPLETE for normal approval. It never
